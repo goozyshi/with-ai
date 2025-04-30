@@ -867,3 +867,669 @@ figure {
 5. **灵活使用工具**：结合 CSS 选择器和间距属性创建更健壮的布局
 
 记住："好的间距设计是用户体验的基础，防御性的间距设置是稳定布局的保障。"
+
+# 防御式 CSS 课程 - 第八章：position:sticky 失效与修复
+
+## 粘性定位的作用
+
+粘性定位(`position: sticky`)是 CSS 定位方式中一个强大但易被误解的功能。它可以帮助开发者轻松实现以前需要 JavaScript 才能实现的效果，例如：
+
+- 粘性导航栏(Sticky Navigation)
+- 粘性侧边栏(Sticky Sidebar)
+- 滚动索引(Scrolling Index)
+- 页面内的固定元素
+
+只需几行 CSS 代码就能实现这些效果：
+
+```css
+.navigation {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+}
+```
+
+然而，很多开发者会发现`position: sticky`在某些场景下不起作用，却不知道原因和修复方法。
+
+## 粘性定位的工作原理
+
+要理解粘性定位何时失效，首先需要了解它的工作原理。粘性定位是相对定位(`relative`)和固定定位(`fixed`)的混合体：
+
+- 当元素未达到指定阈值时，表现为相对定位
+- 当元素滚动到指定阈值时，表现为固定定位
+
+粘性定位主要由两个部分组成：
+
+1. **粘附项目**：设置了`position: sticky`的元素
+2. **粘附容器**：粘性定位元素的父容器，是粘附项目可浮动的最大范围区域
+
+**重要的是**：当你定义一个元素为`position: sticky`时，将自动定义其父元素为粘附容器！粘附项目不能脱离其粘附容器的范围。
+
+![粘性定位工作原理](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/b9bc948fb2944f6b9daca25cfdd576d9~tplv-k3u1fbpfcp-zoom-1.image)
+
+## 粘性定位失效的九大原因及修复方法
+
+### 原因一：祖先元素设置了 overflow 属性
+
+当粘性定位元素的任何祖先元素设置了`overflow: hidden`、`overflow: auto`、`overflow: scroll`或`overflow: overlay`时，粘性定位会失效。
+
+```html
+<div style="overflow: hidden;">
+  <div style="position: sticky; top: 0;">
+    我无法粘附，因为祖先元素设置了overflow: hidden
+  </div>
+</div>
+```
+
+**修复方法**：
+
+1. **使用 overflow: clip 替代 overflow: hidden**：
+   ```css
+   .container {
+     overflow-x: clip; /* 代替 overflow-x: hidden */
+   }
+   ```
+2. **在溢出容器上设置高度**：
+   ```css
+   .container {
+     height: 100vh;
+     overflow-x: hidden;
+   }
+   ```
+
+### 原因二：未指定阈值
+
+粘性定位元素必须设置`top`、`right`、`bottom`或`left`属性中的至少一个，否则会被视为普通的相对定位。
+
+```css
+/* 无效的粘性定位 */
+header {
+  position: sticky;
+}
+
+/* 有效的粘性定位 */
+header {
+  position: sticky;
+  top: 0; /* 提供阈值 */
+}
+```
+
+**修复方法**：
+始终指定至少一个方向的阈值，通常与滚动方向一致：
+
+- 垂直滚动时，使用`top`或`bottom`
+- 水平滚动时，使用`left`或`right`
+
+### 原因三：粘附容器高度等于粘附项目高度
+
+当粘附容器(父元素)的高度与粘附项目(sticky 元素)的高度相同时，粘性定位失效。这在 Flexbox 布局中特别常见。
+
+```html
+<div class="container">
+  <main>Main Content</main>
+  <aside>Sticky Sidebar</aside>
+</div>
+```
+
+```css
+.container {
+  display: flex;
+}
+
+aside {
+  position: sticky;
+  top: 160px;
+  /* 由于flex布局的align-items: stretch默认值，
+       aside高度会被拉伸至与container相同，导致sticky失效 */
+}
+```
+
+### 原因四：transform 应用于粘附容器
+
+当粘附容器应用了 CSS 变换(如`transform`, `perspective`或`filter`属性)时，粘性定位会相对于该变换的容器，而不是视口。
+
+**修复方法**：
+避免在粘附容器上使用这些属性，或调整 HTML 结构使粘性元素不受这些属性影响。
+
+### 原因五：未正确指定方向阈值
+
+设置的阈值方向与页面滚动方向不匹配：
+
+```css
+/* 垂直滚动页面不正确的设置 */
+.element {
+  position: sticky;
+  left: 0; /* 应该使用top */
+}
+```
+
+**修复方法**：
+确保阈值方向与滚动方向一致。
+
+### 原因六：z-index 问题
+
+粘性元素可能被其他元素覆盖，看起来像是失效。
+
+**修复方法**：
+为粘性元素设置适当的`z-index`值，确保它在正确的层叠上下文中。
+
+```css
+.sticky-element {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+```
+
+### 原因七：不适合的 HTML 结构
+
+特别是在创建滚动索引时，HTML 结构会影响粘性定位的表现：
+
+```html
+<!-- 正确结构：每个标题在各自的section中 -->
+<section>
+  <h3>标题1</h3>
+  <div>内容1</div>
+</section>
+<section>
+  <h3>标题2</h3>
+  <div>内容2</div>
+</section>
+
+<!-- 错误结构：所有标题在同一个容器中会重叠 -->
+<section>
+  <h3>标题1</h3>
+  <div>内容1</div>
+  <h3>标题2</h3>
+  <div>内容2</div>
+</section>
+```
+
+**修复方法**：
+针对不同的粘性效果使用正确的 HTML 嵌套结构。
+
+### 原因八：粘附容器太小
+
+粘附容器必须有足够的高度使粘性元素能够"滚动"。
+
+**修复方法**：
+确保粘附容器有足够的内容高度。
+
+### 原因九：未考虑移动设备视口
+
+移动设备的视口处理可能与桌面不同，特别是当涉及到软键盘或地址栏动态变化时。
+
+**修复方法**：
+测试并优化移动设备上的粘性定位，可能需要使用媒体查询或 JS 辅助。
+
+## 防御式 sticky 定位最佳实践
+
+为了确保粘性定位在各种情况下都能正常工作，推荐以下防御式实践：
+
+1. **检查清单法**：每次使用`position: sticky`时，确保：
+
+   - 设置了正确的方向阈值(top/bottom/left/right)
+   - 没有 overflow 限制的祖先元素(或已采取修复措施)
+   - 粘附容器高度大于粘附项目高度
+
+2. **使用特定类标记粘性样式**：
+
+   ```css
+   .sticky-top {
+     position: sticky;
+     top: 0;
+     align-self: flex-start; /* 防止flex拉伸 */
+     z-index: 10; /* 确保正确的层叠顺序 */
+   }
+   ```
+
+3. **编写容错代码**：
+
+   ```css
+   /* 针对不支持sticky的浏览器提供回退方案 */
+   @supports not (position: sticky) {
+     .sticky-element {
+       position: relative;
+     }
+   }
+   ```
+
+4. **对粘附容器应用防御式样式**：
+   ```css
+   .sticky-container {
+     /* 确保不会限制子元素的sticky行为 */
+     overflow: visible;
+     /* 在flexbox中确保子元素不会等高 */
+     align-items: flex-start;
+   }
+   ```
+
+## 小结
+
+`position: sticky`是一个强大的 CSS 特性，它能让我们不依赖 JavaScript 就能实现吸附效果。但要正确使用它，需要了解其工作原理和常见失效原因。
+
+记住以下关键点：
+
+1. 避免粘性定位元素的祖先元素设置`overflow`为`auto`、`scroll`、`hidden`或`overlay`
+2. 始终设置一个方向阈值(`top`、`right`、`bottom`或`left`)
+3. 确保粘附容器高度大于粘附项目高度
+4. 在 Flexbox 布局中，注意对齐方式的影响
+
+掌握了这些知识，你就能在各种场景中有效地使用粘性定位，并快速诊断和修复可能出现的问题。
+
+# 防御式 CSS 课程 - 第九章：z-index 失效与修复
+
+## z-index 与 3D 空间概念
+
+许多 Web 开发者可能认为网页元素仅存在于二维空间（内联轴和块轴），但实际上，网页元素存在于一个 3D 世界中。除了内联轴（x 轴）和块轴（y 轴）外，还有一个 z 轴。而 CSS 中的`z-index`属性就是用来控制元素在 z 轴上的顺序。
+
+然而，很多开发者在使用`z-index`时会发现它并不起作用，这是因为对层叠上下文（Stacking Context）概念的理解不足。
+
+## z-index 的基础知识
+
+`z-index`属性的默认值是`auto`。如果元素没有显式设置`z-index`值，浏览器会根据元素在 HTML 文档中出现的先后顺序（源顺序）来计算其层级。
+
+在正常文档流中，静态定位的元素不会创建层叠上下文。**这时候，即使你为元素设置`z-index`值，它也不会起任何作用**。要让`z-index`生效，你需要为该元素创建一个层叠上下文。
+
+## 创建层叠上下文的方法
+
+在 CSS 中，创建层叠上下文的常见方法包括：
+
+1. 设置`position`为非`static`值（如`relative`、`absolute`等）并指定`z-index`值
+2. Flex 项目或 Grid 项目，且`z-index`值不是默认的`auto`
+3. `opacity`值小于 1
+4. `transform`、`filter`、`backdrop-filter`等属性值不是`none`
+5. `isolation`值为`isolate`
+6. `will-change`设置了会创建层叠上下文的属性
+7. `contain`值为`layout`、`paint`或包含它们的复合值
+
+> **特别提醒**：当`position`值为`fixed`或`sticky`时，即使不设置`z-index`值也会创建层叠上下文。
+
+## z-index 失效的常见原因及修复方法
+
+### 1. 未创建层叠上下文
+
+**问题**：给元素设置了`z-index`值，但它不起作用。
+
+```css
+.element {
+  z-index: 99; /* 无效 */
+}
+```
+
+**修复方法**：为元素创建层叠上下文
+
+```css
+/* 方法1：使用position创建 */
+.element {
+  position: relative;
+  z-index: 99;
+}
+
+/* 方法2：使用isolation创建（推荐） */
+.element {
+  isolation: isolate;
+  z-index: 99;
+}
+```
+
+`isolation: isolate`是创建层叠上下文的最佳方式，因为它：
+
+- 不需要规定`z-index`值
+- 可以作用于`static`元素
+- 不会影响子元素样式
+- 专门用于创建层叠上下文，无其他副作用
+
+### 2. 父元素层叠上下文限制
+
+**问题**：明明给元素设置了很大的`z-index`值，但它仍然被其他元素覆盖。
+
+```html
+<div class="parent1" style="z-index: 1">
+  <div class="child" style="z-index: 999"></div>
+</div>
+<div class="parent2" style="z-index: 2"></div>
+```
+
+在这种情况下，即使`.child`的`z-index`值为 999，它仍然会被`.parent2`覆盖，因为子元素的层叠顺序是相对于其父元素的。
+
+**修复方法**：
+
+1. 调整父元素的`z-index`值
+2. 避免在不必要的父元素上创建层叠上下文
+
+### 3. 负值 z-index 的失效
+
+**问题**：给元素设置了负值`z-index`，期望它位于父元素之下，但它仍然显示在上面。
+
+```css
+.parent {
+  position: relative;
+  z-index: 0;
+}
+
+.child {
+  position: absolute;
+  z-index: -1;
+}
+```
+
+**修复方法**：避免在父元素上创建层叠上下文，或者调整 HTML 结构。
+
+```html
+<!-- 优化后的HTML结构 -->
+<div class="wrapper">
+  <!-- 创建层叠上下文 -->
+  <div class="content">
+    <!-- 避免创建层叠上下文 -->
+    <div class="background" style="z-index: -1"></div>
+  </div>
+</div>
+```
+
+## 调试工具
+
+当遇到 z-index 问题时，可以使用以下工具辅助排查：
+
+1. Microsoft Edge 的 3D 视图（3D View）
+2. Chrome 和 Firefox 的 CSS 层叠上下文检查器插件（CSS Stacking Context inspector）
+
+## 防御式 z-index 使用原则
+
+1. **明确创建层叠上下文**：使用`isolation: isolate`显式创建层叠上下文
+2. **避免过大 z-index 值**：使用合理的数值，如 1、2、3，而非 99、999、9999
+3. **层级设计**：事先规划 UI 组件的层级关系，避免随意设置
+4. **检查限制因素**：排查父元素是否限制了子元素的 z-index 效果
+5. **优化 HTML 结构**：有时调整 HTML 结构比调整 CSS 更有效
+
+记住：**层叠上下文中元素的 z-index 总是相对于父元素在其自身层叠上下文中的当前顺序**。
+
+掌握了这些原则，你就能在处理复杂 UI 时更有信心地控制元素的层叠顺序，确保界面在各种情况下都能正确显示。
+
+# 防御式 CSS 课程 - 第十五章：你不知道的 CSS 渐变
+
+## 渐变在现代 Web 设计中的地位
+
+渐变效果在现代 Web 设计中已随处可见。过去，开发者需要依赖图片来呈现渐变效果，而现在 CSS 渐变模块让我们可以直接用代码创建灵活、高效的渐变效果。然而，使用 CSS 渐变时有许多细节需要掌握，否则会出现意想不到的问题。
+
+本章将深入探讨 CSS 渐变的理论知识和实战应用，帮助你在项目中更加得心应手地运用这一技术。
+
+## CSS 渐变基础知识
+
+渐变指的是从一种颜色平滑过渡到另一种颜色的效果。在 CSS 中，渐变被视为图像类型，可用于任何接受`<image>`值的属性，如`background-image`、`border-image`、`mask-image`等。
+
+CSS 渐变主要分为三种类型：
+
+1. **线性渐变**：`linear-gradient()`和`repeating-linear-gradient()`
+2. **径向渐变**：`radial-gradient()`和`repeating-radial-gradient()`
+3. **锥形渐变**：`conic-gradient()`和`repeating-conic-gradient()`
+
+每种渐变都允许你控制多个参数，如渐变方向、渐变颜色和渐变位置等：
+
+```css
+.linear-gradient {
+  background-image: linear-gradient(#ff8a00, #e52e71);
+}
+
+.radial-gradient {
+  background-image: radial-gradient(#ff8a00, #e52e71);
+}
+
+.conic-gradient {
+  background-image: conic-gradient(#ff8a00, #e52e71);
+}
+```
+
+多个渐变函数还可以叠加使用，构建复杂的 UI 效果：
+
+```css
+.complex-gradient {
+  background-image: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0) 50%
+    ), radial-gradient(circle at center, #4a90e2, #945aa6);
+}
+```
+
+## CSS 渐变的实际应用场景
+
+### 1. 绘制 UI 图形
+
+CSS 渐变可用于创建各种 UI 元素，特别是与多背景技术结合时更为强大：
+
+```css
+.card {
+  background-image: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.2) 70%,
+      transparent 70%
+    ), radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.2) 70%,
+      transparent 70%
+    ), radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0.3) 70%,
+      transparent 70%
+    ), linear-gradient(180deg, #ffe3ae 0%, #ffd34f 100%);
+  background-repeat: no-repeat;
+  background-size: 28px 28px, 49px 49px, 103px 103px, cover;
+  background-position: calc(100% - 20px) calc(100% - 20px), calc(100% + 10px) calc(
+        100% + 10px
+      ), -34px -28px, 0 0;
+}
+```
+
+### 2. 渐变文本效果
+
+虽然不能直接将渐变应用于`color`属性，但可以结合`background-clip`和`-webkit-text-fill-color`实现渐变文本：
+
+```css
+.gradient-text {
+  background-image: linear-gradient(
+    to right,
+    #09f1b8,
+    #00a2ff,
+    #ff00d2,
+    #fed90f
+  );
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 2px;
+}
+```
+
+结合动画，还能创建流动的渐变文本效果：
+
+```css
+.animated-text {
+  background: linear-gradient(
+    -4deg,
+    transparent,
+    #ffb6ff,
+    #b344ff,
+    transparent
+  );
+  background-clip: text;
+  background-size: 100% 400%;
+  -webkit-text-fill-color: transparent;
+  animation: textScroll 6s infinite linear alternate;
+}
+
+@keyframes textScroll {
+  100% {
+    background-position: center 100%;
+  }
+}
+```
+
+### 3. 渐变边框实现
+
+有两种主要方法可以实现渐变边框：
+
+**方法一：使用`border-image`**
+
+```css
+.gradient-border {
+  --gradient: linear-gradient(45deg, #ff0000, #0000ff);
+  border: 10px solid;
+  border-image: var(--gradient) 1;
+}
+```
+
+**方法二：嵌套渐变**
+
+```css
+.gradient-border {
+  border: 10px solid transparent;
+  background-image: linear-gradient(white, white),
+    /* 内容背景 */ linear-gradient(45deg, #ff0000, #0000ff); /* 边框渐变 */
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+```
+
+### 4. 创建纹理背景
+
+CSS 渐变是创建复杂纹理背景的强大工具：
+
+```css
+/* 棋盘纹理 */
+.chess-pattern {
+  background-color: #eee;
+  background-image: linear-gradient(
+      45deg,
+      black 25%,
+      transparent 25%,
+      transparent 75%,
+      black 75%,
+      black
+    ), linear-gradient(45deg, black 25%, transparent 25%, transparent 75%, black
+        75%, black);
+  background-size: 60px 60px;
+  background-position: 0 0, 30px 30px;
+}
+
+/* 使用repeating-conic-gradient简化 */
+.chess-pattern-improved {
+  background: repeating-conic-gradient(#000 0% 25%, #eee 0% 50%) 50% / 60px 60px;
+}
+```
+
+### 5. 图片蒙层效果
+
+结合`mask-image`属性，CSS 渐变可以创建各种图片蒙层效果：
+
+```css
+.masked-image {
+  background: url(image.jpg) no-repeat center/cover;
+  mask-image: linear-gradient(to bottom, black, transparent);
+}
+```
+
+## 防御式 CSS 渐变实践
+
+### 1. 渐变角度的处理
+
+`linear-gradient`角度的起点是从下往上，而非直觉上的从左往右：
+
+```css
+/* 这会从左往右渐变，而非从上往下 */
+.gradient {
+  background: linear-gradient(90deg, red, blue);
+}
+```
+
+为避免混淆，可以使用关键词：
+
+```css
+.gradient {
+  background: linear-gradient(to right, red, blue);
+}
+```
+
+### 2. 色标位置的精确控制
+
+为避免渐变突变，可以在同一位置使用两个色标：
+
+```css
+/* 在50%处有明显的色彩突变 */
+.harsh-gradient {
+  background: linear-gradient(to right, red 50%, blue 50%);
+}
+
+/* 色彩平滑过渡 */
+.smooth-gradient {
+  background: linear-gradient(to right, red 0%, blue 100%);
+}
+```
+
+### 3. 防止渐变条带现象
+
+当渐变跨度较大时，可能出现色带现象。使用多个中间色标可以减轻这一问题：
+
+```css
+/* 可能出现色带 */
+.banded {
+  background: linear-gradient(to right, #ff0000, #0000ff);
+}
+
+/* 使用更多色标避免色带 */
+.smooth {
+  background: linear-gradient(to right, #ff0000, #ff00aa, #aa00ff, #0000ff);
+}
+```
+
+### 4. 硬件加速渐变动画
+
+直接动画渐变参数会导致性能问题。更好的方法是：
+
+```css
+.efficient-animation {
+  background: linear-gradient(to right, red, blue);
+  background-size: 200% 100%;
+  animation: moveGradient 2s linear infinite;
+}
+
+@keyframes moveGradient {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 0%;
+  }
+}
+```
+
+### 5. 渐变回退机制
+
+为不支持特定渐变的浏览器提供回退：
+
+```css
+.with-fallback {
+  /* 基础颜色回退 */
+  background-color: #5a7eda;
+  /* 线性渐变作为conic-gradient的回退 */
+  background-image: linear-gradient(135deg, #5a7eda, #a767e5);
+  /* 现代浏览器使用锥形渐变 */
+  background-image: conic-gradient(from 135deg, #5a7eda, #a767e5, #5a7eda);
+}
+```
+
+## 总结
+
+CSS 渐变是现代 Web 设计中不可或缺的工具，它为我们提供了创建丰富视觉效果的能力，而无需依赖外部图像资源。通过本章的学习，你应该已经掌握了 CSS 渐变的基础知识、应用场景和防御性开发技巧。
+
+在实际项目中，记住要关注以下几点：
+
+- 选择恰当的渐变类型和参数
+- 注意性能影响，特别是在动画中
+- 提供适当的回退方案以确保跨浏览器兼容性
+- 利用多重渐变创建复杂效果
+- 测试不同屏幕和设备上的渲染效果
+
+掌握这些技巧，你将能够自信地在项目中运用 CSS 渐变，创造出既美观又高效的用户界面。
