@@ -1,6 +1,6 @@
 在前面的入门环节中，我们了解了日常开发中最常用的、基础的变量类型标注，包括原始类型、对象类型、字面量类型与枚举类型。而实际开发中还有一个重要的朋友：**函数**。函数能够帮助我们进一步抽离与封装代码逻辑，所以掌握函数类型必不可少。如果说函数代表着面向过程的编程，那么 Class 则代表着面向对象的编程，而它也是 ES6 新特性的重要一部分———我们终于可以和各种花式继承告别了。
 
-这一节，我们会介绍函数与 Class 的类型标注，以及一些在 TypeScript 中独有或相比 JavaScript 更加完全的概念，如**重载**与**面向对象的编程**等。函数部分，我们主要关注其参数类型、返回值类型以及重载的应用。 Class部分，除了类型以外，我们还会学习访问性修饰符、继承、抽象类等来自于面向对象理念的实际使用。
+这一节，我们会介绍函数与 Class 的类型标注，以及一些在 TypeScript 中独有或相比 JavaScript 更加完全的概念，如**重载**与**面向对象的编程**等。函数部分，我们主要关注其参数类型、返回值类型以及重载的应用。 Class 部分，除了类型以外，我们还会学习访问性修饰符、继承、抽象类等来自于面向对象理念的实际使用。
 
 这一节之后，我们就算正式入门 TypeScript 了。此时，你已经掌握了从 JavaScript 迁移到 TypeScript 后的主要技巧，可以开始大胆地在新项目中使用 TypeScript 了。
 
@@ -22,20 +22,20 @@ function foo(name: string): number {
 
 在函数类型中同样存在着类型推导。比如在这个例子中，你可以不写返回值处的类型，它也能被正确推导为 number 类型。
 
-在 JavaScript 中，我们称 `function name () {}` 这一声明函数的方式为**函数声明（*Function Declaration*）**。除了函数声明以外，我们还可以通过**函数表达式（*Function Expression*）**，即 `const foo = function(){}` 的形式声明一个函数。在表达式中进行类型声明的方式是这样的：
+在 JavaScript 中，我们称 `function name () {}` 这一声明函数的方式为**函数声明（_Function Declaration_）**。除了函数声明以外，我们还可以通过**函数表达式（_Function Expression_）**，即 `const foo = function(){}` 的形式声明一个函数。在表达式中进行类型声明的方式是这样的：
 
 ```typescript
 const foo = function (name: string): number {
-  return name.length
-}
+  return name.length;
+};
 ```
 
 我们也可以像对变量进行类型标注那样，对 `foo` 这个变量进行类型声明：
 
 ```typescript
 const foo: (name: string) => number = function (name) {
-  return name.length
-}
+  return name.length;
+};
 ```
 
 这里的 `(name: string) => number` 看起来很眼熟，对吧？它是 ES6 的重要特性之一：箭头函数。但在这里，它其实是 TypeScript 中的**函数类型签名**。而实际的箭头函数，我们的类型标注也是类似的：
@@ -43,30 +43,30 @@ const foo: (name: string) => number = function (name) {
 ```typescript
 // 方式一
 const foo = (name: string): number => {
-  return name.length
-}
+  return name.length;
+};
 
 // 方式二
 const foo: (name: string) => number = (name) => {
-  return name.length
-}
+  return name.length;
+};
 ```
 
 在方式二的声明方式中，你会发现函数类型声明混合箭头函数声明时，代码的可读性会非常差。因此，一般不推荐这么使用，要么**直接在函数中进行参数和返回值的类型声明**，要么**使用类型别名将函数声明抽离出来**：
 
 ```typescript
-type FuncFoo = (name: string) => number
+type FuncFoo = (name: string) => number;
 
 const foo: FuncFoo = (name) => {
-  return name.length
-}
+  return name.length;
+};
 ```
 
 如果只是为了描述这个函数的类型结构，我们甚至可以使用 interface 来进行函数声明：
 
 ```typescript
 interface FuncFooStruct {
-  (name: string): number
+  (name: string): number;
 }
 ```
 
@@ -78,7 +78,7 @@ interface FuncFooStruct {
 
 ```typescript
 // 没有调用 return 语句
-function foo(): void { }
+function foo(): void {}
 
 // 调用了 return 语句，但没有返回值
 function bar(): void {
@@ -104,13 +104,13 @@ function bar(): undefined {
 // 在函数逻辑中注入可选参数默认值
 function foo1(name: string, age?: number): number {
   const inputAge = age || 18; // 或使用 age ?? 18
-  return name.length + inputAge
+  return name.length + inputAge;
 }
 
 // 直接为可选参数声明默认值
 function foo2(name: string, age: number = 18): number {
   const inputAge = age;
-  return name.length + inputAge
+  return name.length + inputAge;
 }
 ```
 
@@ -119,7 +119,7 @@ function foo2(name: string, age: number = 18): number {
 ```typescript
 function foo(name: string, age: number = 18): number {
   const inputAge = age || 18;
-  return name.length + inputAge
+  return name.length + inputAge;
 }
 ```
 
@@ -130,15 +130,15 @@ function foo(name: string, age: number = 18): number {
 > 对于 any 类型，你可以简单理解为它包含了一切可能的类型，我们会在下一节详细介绍。
 
 ```typescript
-function foo(arg1: string, ...rest: any[]) { }
+function foo(arg1: string, ...rest: any[]) {}
 ```
 
 当然，你也可以使用我们前面学习的元组类型进行标注：
 
 ```typescript
-function foo(arg1: string, ...rest: [number, boolean]) { }
+function foo(arg1: string, ...rest: [number, boolean]) {}
 
-foo("linbudu", 18, true)
+foo("linbudu", 18, true);
 ```
 
 ### 重载
@@ -157,7 +157,7 @@ function func(foo: number, bar?: boolean): string | number {
 
 在这个实例中，函数的返回类型基于其入参 `bar` 的值，并且从其内部逻辑中我们知道，当 `bar` 为 true，返回值为 string 类型，否则为 number 类型。而这里的类型签名完全没有体现这一点，我们只知道它的返回值是这么个联合类型。
 
-要想实现与入参关联的返回值类型，我们可以使用 TypeScript 提供的**函数重载签名（*Overload Signature*）**，将以上的例子使用重载改写：
+要想实现与入参关联的返回值类型，我们可以使用 TypeScript 提供的**函数重载签名（_Overload Signature_）**，将以上的例子使用重载改写：
 
 ```typescript
 function func(foo: number, bar: true): string;
@@ -189,7 +189,6 @@ const res3 = func(599, false); // number
 
 实际上，TypeScript 中的重载更像是伪重载，**它只有一个具体实现，其重载体现在方法调用的签名上而非具体实现上**。而在如 C++ 等语言中，重载体现在多个**名称一致但入参不同的函数实现上**，这才是更广义上的函数重载。
 
-
 ### 异步函数、Generator 函数等类型签名
 
 对于异步函数、Generator 函数、异步 Generator 函数的类型签名，其参数签名基本一致，而返回值类型则稍微有些区别：
@@ -210,7 +209,7 @@ async function* asyncGenFunc(): AsyncIterable<void> {}
 
 ### 类与类成员的类型签名
 
-一个函数的主要结构即是参数、逻辑和返回值，对于逻辑的类型标注其实就是对普通代码的标注，所以我们只介绍了对参数以及返回值的类型标注。而到了 Class 中其实也一样，它的主要结构只有**构造函数**、**属性**、**方法**和**访问符（*Accessor*）**，我们也只需要关注这三个部分即可。这里我要说明一点，有的同学可能认为装饰器也是 Class 的结构，但我个人认为它并不是 Class 携带的逻辑，不应该被归类在这里。
+一个函数的主要结构即是参数、逻辑和返回值，对于逻辑的类型标注其实就是对普通代码的标注，所以我们只介绍了对参数以及返回值的类型标注。而到了 Class 中其实也一样，它的主要结构只有**构造函数**、**属性**、**方法**和**访问符（_Accessor_）**，我们也只需要关注这三个部分即可。这里我要说明一点，有的同学可能认为装饰器也是 Class 的结构，但我个人认为它并不是 Class 携带的逻辑，不应该被归类在这里。
 
 > 而对于这些结构的具体意义以及 Class 的入门语法，你可以阅读阮一峰老师的 ES6 标准入门。
 
@@ -225,7 +224,7 @@ class Foo {
   }
 
   print(addon: string): void {
-    console.log(`${this.prop} and ${addon}`)
+    console.log(`${this.prop} and ${addon}`);
   }
 
   get propA(): string {
@@ -233,7 +232,7 @@ class Foo {
   }
 
   set propA(value: string) {
-    this.prop = `${value}+A`
+    this.prop = `${value}+A`;
   }
 }
 ```
@@ -251,11 +250,11 @@ const Foo = class {
   }
 
   print(addon: string): void {
-    console.log(`${this.prop} and ${addon}`)
+    console.log(`${this.prop} and ${addon}`);
   }
-  
+
   // ...
-}
+};
 ```
 
 ### 修饰符
@@ -273,7 +272,7 @@ class Foo {
   }
 
   protected print(addon: string): void {
-    console.log(`${this.prop} and ${addon}`)
+    console.log(`${this.prop} and ${addon}`);
   }
 
   public get propA(): string {
@@ -281,7 +280,7 @@ class Foo {
   }
 
   public set propA(value: string) {
-    this.propA = `${value}+A`
+    this.propA = `${value}+A`;
   }
 }
 ```
@@ -298,10 +297,10 @@ class Foo {
 
 ```typescript
 class Foo {
-  constructor(public arg1: string, private arg2: boolean) { }
+  constructor(public arg1: string, private arg2: boolean) {}
 }
 
-new Foo("linbudu", true)
+new Foo("linbudu", true);
 ```
 
 此时，参数会被直接作为类的成员（即实例的属性），免去后续的手动赋值。
@@ -312,9 +311,9 @@ new Foo("linbudu", true)
 
 ```typescript
 class Foo {
-  static staticHandler() { }
+  static staticHandler() {}
 
-  public instanceHandler() { }
+  public instanceHandler() {}
 }
 ```
 
@@ -322,12 +321,11 @@ class Foo {
 
 ```javascript
 var Foo = /** @class */ (function () {
-    function Foo() {
-    }
-    Foo.staticHandler = function () { };
-    Foo.prototype.instanceHandler = function () { };
-    return Foo;
-}());
+  function Foo() {}
+  Foo.staticHandler = function () {};
+  Foo.prototype.instanceHandler = function () {};
+  return Foo;
+})();
 ```
 
 从中我们可以看到，**静态成员直接被挂载在函数体上**，而**实例成员挂载在原型上**，这就是二者的最重要差异：**静态成员不会被实例继承，它始终只属于当前定义的这个类（以及其子类）**。而原型对象上的实例成员则会**沿着原型链进行传递**，也就是能够被继承。
@@ -343,7 +341,7 @@ class Utils {
     // ...
   }
 
-  public static studyWithU() { }
+  public static studyWithU() {}
 }
 
 Utils.makeUHappy();
@@ -354,23 +352,23 @@ Utils.makeUHappy();
 既然说到 Class，那就一定离不开继承。与 JavaScript 一样，TypeScript 中也使用 extends 关键字来实现继承：
 
 ```typescript
-class Base { }
+class Base {}
 
-class Derived extends Base { }
+class Derived extends Base {}
 ```
 
-对于这里的两个类，比较严谨的称呼是 **基类（*Base*）** 与 **派生类（*Derived*）**。当然，如果你觉得叫父类与子类更容易理解也没问题。关于基类与派生类，我们需要了解的主要是**派生类对基类成员的访问与覆盖操作**。
+对于这里的两个类，比较严谨的称呼是 **基类（_Base_）** 与 **派生类（_Derived_）**。当然，如果你觉得叫父类与子类更容易理解也没问题。关于基类与派生类，我们需要了解的主要是**派生类对基类成员的访问与覆盖操作**。
 
 基类中的哪些成员能够被派生类访问，完全是由其访问性修饰符决定的。我们在上面其实已经介绍过，派生类中可以访问到使用 `public` 或 `protected` 修饰符的基类成员。除了访问以外，基类中的方法也可以在派生类中被覆盖，但我们仍然可以通过 super 访问到基类中的方法：
 
 ```typescript
 class Base {
-  print() { }
+  print() {}
 }
 
 class Derived extends Base {
   print() {
-    super.print()
+    super.print();
     // ...
   }
 }
@@ -380,7 +378,7 @@ class Derived extends Base {
 
 ```typescript
 class Base {
-  printWithLove() { }
+  printWithLove() {}
 }
 
 class Derived extends Base {
@@ -400,7 +398,7 @@ class Derived extends Base {
 abstract class AbsFoo {
   abstract absProp: string;
   abstract get absGetter(): string;
-  abstract absMethod(name: string): string
+  abstract absMethod(name: string): string;
 }
 ```
 
@@ -408,14 +406,14 @@ abstract class AbsFoo {
 
 ```typescript
 class Foo implements AbsFoo {
-  absProp: string = "linbudu"
+  absProp: string = "linbudu";
 
   get absGetter() {
-    return "linbudu"
+    return "linbudu";
   }
 
   absMethod(name: string) {
-    return name
+    return name;
   }
 }
 ```
@@ -428,18 +426,18 @@ class Foo implements AbsFoo {
 interface FooStruct {
   absProp: string;
   get absGetter(): string;
-  absMethod(input: string): string
+  absMethod(input: string): string;
 }
 
 class Foo implements FooStruct {
-  absProp: string = "linbudu"
+  absProp: string = "linbudu";
 
   get absGetter() {
-    return "linbudu"
+    return "linbudu";
   }
 
   absMethod(name: string) {
-    return name
+    return name;
   }
 }
 ```
@@ -447,17 +445,16 @@ class Foo implements FooStruct {
 在这里，我们让类去实现了一个接口。这里接口的作用和抽象类一样，都是**描述这个类的结构**。除此以外，我们还可以使用 **Newable Interface** 来描述一个类的结构（类似于描述函数结构的 **Callable Interface**）：
 
 ```typescript
-class Foo { }
+class Foo {}
 
 interface FooStruct {
-  new(): Foo
+  new (): Foo;
 }
 
 declare const NewableFoo: FooStruct;
 
 const foo = new NewableFoo();
 ```
-
 
 ## 总结与预告
 
@@ -475,7 +472,7 @@ const foo = new NewableFoo();
 
 ```typescript
 class Foo {
-  private constructor() { }
+  private constructor() {}
 }
 ```
 
@@ -488,11 +485,10 @@ class Foo {
 ```typescript
 class Utils {
   public static identifier = "linbudu";
-  
-  private constructor(){}
 
-  public static makeUHappy() {
-  }
+  private constructor() {}
+
+  public static makeUHappy() {}
 }
 ```
 
@@ -518,11 +514,11 @@ enum LoginType {
 
 class Login {
   public static handler(type: LoginType) {
-    if (type === LoginType.WeChat) { }
-    else if (type === LoginType.TikTok) { }
-    else if (type === LoginType.TaoBao) { }
-    else {
-      throw new Error("Invalid Login Type!")
+    if (type === LoginType.WeChat) {
+    } else if (type === LoginType.TikTok) {
+    } else if (type === LoginType.TaoBao) {
+    } else {
+      throw new Error("Invalid Login Type!");
     }
   }
 }
@@ -532,19 +528,19 @@ class Login {
 
 ```typescript
 abstract class LoginHandler {
-  abstract handler(): void
+  abstract handler(): void;
 }
 
 class WeChatLoginHandler implements LoginHandler {
-  handler() { }
+  handler() {}
 }
 
 class TaoBaoLoginHandler implements LoginHandler {
-  handler() { }
+  handler() {}
 }
 
 class TikTokLoginHandler implements LoginHandler {
-  handler() { }
+  handler() {}
 }
 
 class Login {
@@ -552,10 +548,9 @@ class Login {
     [LoginType.TaoBao]: new TaoBaoLoginHandler(),
     [LoginType.TikTok]: new TikTokLoginHandler(),
     [LoginType.WeChat]: new WeChatLoginHandler(),
-
-  }
+  };
   public static handler(type: LoginType) {
-    Login.handlerMap[type].handler()
+    Login.handlerMap[type].handler();
   }
 }
 ```
@@ -565,5 +560,3 @@ L，**里式替换原则**，**一个派生类可以在程序的任何一处对�
 I，**接口分离原则**，**类的实现方应当只需要实现自己需要的那部分接口**。比如微信登录支持指纹识别，支付宝支持指纹识别和人脸识别，这个时候微信登录的实现类应该不需要实现人脸识别方法才对。这也就意味着我们提供的抽象类应当按照功能维度拆分成粒度更小的组成才对。
 
 D，**依赖倒置原则**，这是实现开闭原则的基础，它的核心思想即是**对功能的实现应该依赖于抽象层**，即不同的逻辑通过实现不同的抽象类。还是登录的例子，我们的登录提供方法应该基于共同的登录抽象类实现（LoginHandler），最终调用方法也基于这个抽象类，而不是在一个高阶登录方法中去依赖多个低阶登录提供方。
-
-
