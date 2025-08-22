@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>第1章权衡的艺术-实践验证</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .demo-section {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin: 10px 0;
+      }
+      .performance-result {
+        color: #007acc;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vue设计权衡验证实验</h1>
+
+    <!-- 实验1：命令式 vs 声明式性能对比 -->
+    <div class="demo-section">
+      <h2>实验1：命令式 vs 声明式</h2>
+      <div id="imperative-result"></div>
+      <div id="declarative-result"></div>
+    </div>
+
+    <!-- 实验2：虚拟DOM vs innerHTML -->
+    <div class="demo-section">
+      <h2>实验2：虚拟DOM概念 vs innerHTML</h2>
+      <div id="virtual-dom-demo"></div>
+      <div id="inner-html-demo"></div>
+    </div>
+
+    <!-- 实验3：编译时 vs 运行时对比 -->
+    <div class="demo-section">
+      <h2>实验3：编译时+运行时的价值</h2>
+      <div id="compile-runtime-demo"></div>
+    </div>
+
+    <script>
+      console.log("🚀 开始验证Vue设计权衡...");
+
+      // ===== 实验1：命令式 vs 声明式 =====
+      const testData = Array.from({ length: 1000 }, (_, i) => ({
+        id: i,
+        name: `用户${i}`,
+        status: i % 2 === 0 ? "在线" : "离线",
+      }));
+
+      // 命令式实现
+      function imperativeRender(data, container) {
+        console.time("命令式耗时");
+        container.innerHTML = "";
+        const ul = document.createElement("ul");
+
+        data.forEach((item) => {
+          const li = document.createElement("li");
+          li.className = item.status === "在线" ? "online" : "offline";
+          li.textContent = `${item.name} - ${item.status}`;
+          ul.appendChild(li);
+        });
+
+        container.appendChild(ul);
+        console.timeEnd("命令式耗时");
+      }
+
+      // 声明式实现（模拟）
+      function declarativeRender(data, container) {
+        console.time("声明式耗时");
+        const template = data
+          .map(
+            (item) =>
+              `<li class="${item.status === "在线" ? "online" : "offline"}">
+          ${item.name} - ${item.status}
+        </li>`
+          )
+          .join("");
+
+        container.innerHTML = `<ul>${template}</ul>`;
+        console.timeEnd("声明式耗时");
+      }
+
+      // 执行对比
+      imperativeRender(testData, document.getElementById("imperative-result"));
+      declarativeRender(
+        testData,
+        document.getElementById("declarative-result")
+      );
+
+      // ===== 实验2：虚拟DOM概念验证 =====
+      // 模拟虚拟DOM结构
+      const VNode = {
+        tag: "div",
+        props: { class: "container" },
+        children: [
+          { tag: "h3", children: ["虚拟DOM的优势"] },
+          { tag: "p", children: ["1. 可预测的更新"] },
+          { tag: "p", children: ["2. 跨平台能力"] },
+          { tag: "p", children: ["3. 组件化支持"] },
+        ],
+      };
+
+      // 简单的虚拟DOM渲染器
+      function renderVNode(vnode) {
+        if (typeof vnode === "string") return document.createTextNode(vnode);
+
+        const el = document.createElement(vnode.tag);
+
+        if (vnode.props) {
+          Object.entries(vnode.props).forEach(([key, value]) => {
+            el.setAttribute(key, value);
+          });
+        }
+
+        if (vnode.children) {
+          vnode.children.forEach((child) => {
+            el.appendChild(renderVNode(child));
+          });
+        }
+
+        return el;
+      }
+
+      document
+        .getElementById("virtual-dom-demo")
+        .appendChild(renderVNode(VNode));
+
+      // innerHTML对比
+      document.getElementById("inner-html-demo").innerHTML = `
+      <div class="container">
+        <h3>innerHTML方式</h3>
+        <p>1. 简单直接</p>
+        <p>2. 性能更好（单次渲染）</p>
+        <p>3. 但难以做精准更新</p>
+      </div>
+    `;
+
+      // ===== 实验3：编译时+运行时的价值 =====
+      // 模拟编译时优化
+      const compiledTemplate = {
+        // 编译时已知的静态部分
+        staticParts: ['<div class="user-card"><h3>', "</h3><p>状态: "],
+        // 运行时动态部分的位置
+        dynamicSlots: [0, 1], // name, status
+        // 编译时生成的优化渲染函数
+        render: function (data) {
+          return `${this.staticParts[0]}${data.name}${this.staticParts[1]}${data.status}</p></div>`;
+        },
+      };
+
+      // 纯运行时方式（需要运行时解析）
+      function pureRuntime(template, data) {
+        console.time("纯运行时");
+        const result = template.replace(
+          /\{\{(\w+)\}\}/g,
+          (match, key) => data[key]
+        );
+        console.timeEnd("纯运行时");
+        return result;
+      }
+
+      // 编译时+运行时方式
+      function compileRuntime(compiled, data) {
+        console.time("编译时+运行时");
+        const result = compiled.render(data);
+        console.timeEnd("编译时+运行时");
+        return result;
+      }
+
+      // 测试数据
+      const userData = { name: "张三", status: "在线" };
+      const pureTemplate =
+        '<div class="user-card"><h3>{{name}}</h3><p>状态: {{status}}</p></div>';
+
+      // 执行测试
+      const demo3Container = document.getElementById("compile-runtime-demo");
+      demo3Container.innerHTML = `
+      <h4>纯运行时结果:</h4>
+      ${pureRuntime(pureTemplate, userData)}
+      <h4>编译时+运行时结果:</h4>
+      ${compileRuntime(compiledTemplate, userData)}
+      <p class="performance-result">查看控制台对比性能差异</p>
+    `;
+
+      // 🤔 思考题输出
+      console.log(`
+    🤔 思考题：
+    1. 从性能测试结果看，您认为Vue选择声明式的主要原因是什么？
+    2. 虚拟DOM相比直接DOM操作，在什么场景下优势最明显？
+    3. 编译时+运行时的架构，在您的实际项目中有哪些应用场景？
+    
+    请在学习笔记中记录您的答案...
+    `);
+    </script>
+  </body>
+</html>
