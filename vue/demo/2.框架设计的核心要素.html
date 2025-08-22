@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>第2章框架设计核心要素-实践验证</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .demo-section {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin: 10px 0;
+      }
+      .result {
+        color: #007acc;
+        font-weight: bold;
+      }
+      .error {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vue框架设计核心要素验证</h1>
+
+    <!-- 实验1：环境变量控制演示 -->
+    <div class="demo-section">
+      <h2>实验1：环境变量控制</h2>
+      <div id="env-var-demo"></div>
+    </div>
+
+    <!-- 实验2：错误处理机制 -->
+    <div class="demo-section">
+      <h2>实验2：统一错误处理</h2>
+      <div id="error-handling-demo"></div>
+    </div>
+
+    <!-- 实验3：TreeShaking测试 -->
+    <div class="demo-section">
+      <h2>实验3：TreeShaking概念演示</h2>
+      <div id="tree-shaking-demo"></div>
+    </div>
+
+    <script>
+      console.log("🚀 开始验证Vue框架设计核心要素...");
+
+      // ===== 实验1：环境变量控制 =====
+      // 模拟Vue的环境变量控制
+      const __DEV__ = true; // 模拟开发环境
+
+      function warn(msg) {
+        if (__DEV__) {
+          console.warn(`[Vue warn]: ${msg}`);
+          document.getElementById("env-var-demo").innerHTML += `
+          <p class="result">警告信息(开发环境): ${msg}</p>
+        `;
+        }
+      }
+
+      function createApp(options) {
+        if (__DEV__ && !options) {
+          warn("App options cannot be empty");
+        }
+        // 应用创建逻辑...
+        return { mount: () => console.log("App mounted") };
+      }
+
+      // 测试
+      createApp(); // 应该显示警告
+      createApp({}); // 不应显示警告
+
+      // ===== 实验2：错误处理机制 =====
+      // 模拟Vue的统一错误处理
+      const errorHandlingDemo = document.getElementById("error-handling-demo");
+
+      // 全局错误处理器
+      let globalErrorHandler = (err) => {
+        console.error("默认错误处理:", err);
+        errorHandlingDemo.innerHTML += `<p class="error">默认错误处理: ${err.message}</p>`;
+      };
+
+      // 设置自定义错误处理器
+      function setErrorHandler(handler) {
+        globalErrorHandler = handler;
+      }
+
+      // 统一的错误处理函数
+      function callWithErrorHandling(fn, context, args, errorInfo) {
+        try {
+          return fn.apply(context, args);
+        } catch (err) {
+          globalErrorHandler(err, errorInfo);
+        }
+      }
+
+      // 测试不同类型的错误
+      function testErrorHandling() {
+        // 1. 使用默认错误处理
+        callWithErrorHandling(
+          () => {
+            throw new Error("组件渲染错误");
+          },
+          null,
+          [],
+          { component: "TestComponent" }
+        );
+
+        // 2. 设置自定义错误处理
+        setErrorHandler((err, info) => {
+          console.log("自定义错误处理:", err, info);
+          errorHandlingDemo.innerHTML += `
+          <p class="result">自定义错误处理: ${err.message}</p>
+          <p>组件: ${info.component}</p>
+        `;
+        });
+
+        // 3. 再次触发错误
+        callWithErrorHandling(
+          () => {
+            throw new Error("生命周期钩子错误");
+          },
+          null,
+          [],
+          { component: "AnotherComponent", hook: "mounted" }
+        );
+      }
+
+      testErrorHandling();
+
+      // ===== 实验3：TreeShaking概念演示 =====
+      const treeShakerDemo = document.getElementById("tree-shaking-demo");
+
+      // 模拟可Tree-Shaking的API设计
+      const utils = {
+        // 使用/*#__PURE__*/标记，表示无副作用
+        /*#__PURE__*/
+        deepClone(obj) {
+          return JSON.parse(JSON.stringify(obj));
+        },
+
+        // 导出独立函数而非方法
+        formatDate(date) {
+          return new Date(date).toLocaleDateString();
+        },
+      };
+
+      // 模拟使用部分API
+      function demoTreeShaking() {
+        const data = { name: "Vue", version: "3.0" };
+        const cloned = utils.deepClone(data);
+
+        treeShakerDemo.innerHTML = `
+        <p>原始数据: ${JSON.stringify(data)}</p>
+        <p>克隆结果: ${JSON.stringify(cloned)}</p>
+        <p class="result">注意: 在实际构建中，未使用的formatDate函数将被Tree-Shaking删除</p>
+        <pre>
+// 良好的Tree-Shaking设计:
+export function useA() {}  // 未使用时会被移除
+export function useB() {}  // 未使用时会被移除
+
+// 不利于Tree-Shaking的设计:
+export default {
+  useA() {},  // 即使未使用，也会被打包
+  useB() {}   // 即使未使用，也会被打包
+}
+        </pre>
+      `;
+      }
+
+      demoTreeShaking();
+    </script>
+  </body>
+</html>
