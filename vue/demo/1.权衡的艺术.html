@@ -37,7 +37,7 @@
 
     <!-- 实验3：编译时 vs 运行时对比 -->
     <div class="demo-section">
-      <h2>实验3：编译时+运行时的价值</h2>
+      <h2>实验3：三种编译/运行策略对比</h2>
       <div id="compile-runtime-demo"></div>
     </div>
 
@@ -45,7 +45,7 @@
       console.log("🚀 开始验证Vue设计权衡...");
 
       // ===== 实验1：命令式 vs 声明式 =====
-      const testData = Array.from({ length: 1000 }, (_, i) => ({
+      const testData = Array.from({ length: 100 }, (_, i) => ({
         id: i,
         name: `用户${i}`,
         status: i % 2 === 0 ? "在线" : "离线",
@@ -139,7 +139,7 @@
       </div>
     `;
 
-      // ===== 实验3：编译时+运行时的价值 =====
+      // ===== 实验3：三种策略对比 =====
       // 模拟编译时优化
       const compiledTemplate = {
         // 编译时已知的静态部分
@@ -171,6 +171,38 @@
         return result;
       }
 
+      // 新增：纯编译时方式（类似Svelte）
+      function pureCompileTime(data, container) {
+        console.time("纯编译时");
+
+        // 这里模拟编译时生成的代码
+        // 在真实的纯编译时框架中，下面这段代码是在构建时生成的
+        // 不会有模板解析和中间过程，直接就是原生DOM操作
+
+        // 模拟编译后的代码
+        const div = document.createElement("div");
+        div.className = "user-card";
+
+        const h3 = document.createElement("h3");
+        // 直接绑定响应式数据而不是创建虚拟DOM
+        h3.textContent = data.name;
+        div.appendChild(h3);
+
+        const p = document.createElement("p");
+        p.textContent = `状态: ${data.status}`;
+        div.appendChild(p);
+
+        // 清空容器并添加新元素
+        if (container) {
+          // 在实际的Svelte中，这会更智能地处理DOM更新
+          container.innerHTML = "";
+          container.appendChild(div);
+        }
+
+        console.timeEnd("纯编译时");
+        return div.outerHTML;
+      }
+
       // 测试数据
       const userData = { name: "张三", status: "在线" };
       const pureTemplate =
@@ -178,23 +210,79 @@
 
       // 执行测试
       const demo3Container = document.getElementById("compile-runtime-demo");
+
+      // 创建一个临时容器用于纯编译时演示
+      const tempContainer = document.createElement("div");
+
       demo3Container.innerHTML = `
-      <h4>纯运行时结果:</h4>
-      ${pureRuntime(pureTemplate, userData)}
-      <h4>编译时+运行时结果:</h4>
-      ${compileRuntime(compiledTemplate, userData)}
-      <p class="performance-result">查看控制台对比性能差异</p>
-    `;
+        <h4>纯运行时结果:</h4>
+        ${pureRuntime(pureTemplate, userData)}
+        <h4>编译时+运行时结果:</h4>
+        ${compileRuntime(compiledTemplate, userData)}
+        <h4>纯编译时结果:</h4>
+        ${pureCompileTime(userData, tempContainer)}
+        <p class="performance-result">查看控制台对比性能差异</p>
+        
+        <div class="comparison">
+          <h4>三种方式的特点对比:</h4>
+          <table border="1" style="border-collapse: collapse; width: 100%;">
+            <tr>
+              <th>方式</th>
+              <th>优势</th>
+              <th>劣势</th>
+              <th>典型框架</th>
+            </tr>
+            <tr>
+              <td>纯运行时</td>
+              <td>最灵活，支持动态模板</td>
+              <td>性能较低，需要运行时解析</td>
+              <td>早期Vue1.x</td>
+            </tr>
+            <tr>
+              <td>编译时+运行时</td>
+              <td>平衡灵活性和性能</td>
+              <td>构建过程复杂</td>
+              <td>Vue3, React</td>
+            </tr>
+            <tr>
+              <td>纯编译时</td>
+              <td>理论上性能最佳，体积小</td>
+              <td>灵活性受限，动态内容支持弱</td>
+              <td>Svelte</td>
+            </tr>
+          </table>
+        </div>
+      `;
+
+      // 多次执行以比较性能差异
+      console.log("===== 多次执行性能对比 =====");
+      console.log("纯运行时 vs 编译时+运行时 vs 纯编译时:");
+
+      console.log("第1轮:");
+      pureRuntime(pureTemplate, userData);
+      compileRuntime(compiledTemplate, userData);
+      pureCompileTime(userData, tempContainer);
+
+      console.log("第2轮:");
+      pureRuntime(pureTemplate, userData);
+      compileRuntime(compiledTemplate, userData);
+      pureCompileTime(userData, tempContainer);
+
+      console.log("第3轮:");
+      pureRuntime(pureTemplate, userData);
+      compileRuntime(compiledTemplate, userData);
+      pureCompileTime(userData, tempContainer);
 
       // 🤔 思考题输出
       console.log(`
-    🤔 思考题：
-    1. 从性能测试结果看，您认为Vue选择声明式的主要原因是什么？
-    2. 虚拟DOM相比直接DOM操作，在什么场景下优势最明显？
-    3. 编译时+运行时的架构，在您的实际项目中有哪些应用场景？
-    
-    请在学习笔记中记录您的答案...
-    `);
+      🤔 思考题：
+      1. 从性能测试结果看，您认为Vue选择声明式的主要原因是什么？
+      2. 虚拟DOM相比直接DOM操作，在什么场景下优势最明显？
+      3. 为什么Vue没有选择纯编译时方案而是选择编译时+运行时？
+      4. 在什么场景下，Svelte的纯编译时方案可能比Vue更有优势？
+      
+      请在学习笔记中记录您的答案...
+      `);
     </script>
   </body>
 </html>
