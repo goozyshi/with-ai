@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>第3章：Vue.js 3设计思路-实践验证</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .demo-section {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin: 10px 0;
+      }
+      .result {
+        color: #007acc;
+        font-weight: bold;
+      }
+      pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vue.js 3设计思路验证</h1>
+
+    <!-- 实验1：声明式UI描述 -->
+    <div class="demo-section">
+      <h2>实验1：声明式UI描述 - 模板 vs Render函数</h2>
+      <div id="template-demo"></div>
+      <div id="render-demo"></div>
+    </div>
+
+    <!-- 实验2：渲染器设计 -->
+    <div class="demo-section">
+      <h2>实验2：渲染器核心设计</h2>
+      <div id="renderer-demo"></div>
+    </div>
+
+    <!-- 实验3：组件化机制 -->
+    <div class="demo-section">
+      <h2>实验3：组件化机制</h2>
+      <div id="component-demo"></div>
+    </div>
+
+    <script>
+      console.log("🚀 开始验证Vue.js 3设计思路...");
+
+      // ===== 实验1：声明式UI描述 =====
+      // 模拟Vue的两种UI描述方式：模板和渲染函数
+
+      // 1. 模板方式（声明式）
+      const templateDemo = document.getElementById("template-demo");
+      templateDemo.innerHTML = `
+      <h3>模板方式（声明式）</h3>
+      <pre>
+&lt;template&gt;
+  &lt;div class="user-card"&gt;
+    &lt;h4&gt;{{ user.name }}&lt;/h4&gt;
+    &lt;p&gt;{{ user.role }}&lt;/p&gt;
+    &lt;button @click="handleClick"&gt;查看详情&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+      </pre>
+      <p class="result">👆 关注"结果"，描述UI的最终状态，由Vue内部处理实现细节</p>
+    `;
+
+      // 2. 渲染函数方式（更接近命令式，但仍是声明式）
+      const renderDemo = document.getElementById("render-demo");
+      renderDemo.innerHTML = `
+      <h3>渲染函数方式</h3>
+      <pre>
+render() {
+  return h('div', { class: 'user-card' }, [
+    h('h4', null, this.user.name),
+    h('p', null, this.user.role),
+    h('button', { onClick: this.handleClick }, '查看详情')
+  ])
+}
+      </pre>
+      <p class="result">👆 更灵活，但需要手动构建虚拟DOM结构</p>
+    `;
+
+      // ===== 实验2：渲染器设计 =====
+      // 模拟Vue渲染器的核心设计
+
+      const rendererDemo = document.getElementById("renderer-demo");
+      rendererDemo.innerHTML = `
+      <h3>渲染器核心设计</h3>
+      <pre>
+// 创建渲染器 - 平台无关的设计
+function createRenderer(options) {
+  // 平台特定API
+  const {
+    createElement,   // 创建元素
+    setElementText,  // 设置元素文本
+    insert,          // 插入元素
+    patchProp,       // 设置属性
+    // ...其他API
+  } = options;
+  
+  // 渲染函数 - 将虚拟DOM渲染为真实DOM
+  function render(vnode, container) {
+    if (vnode) {
+      // 有新vnode，执行patch
+      patch(container._vnode, vnode, container);
+    } else {
+      // 没有新vnode，卸载旧vnode
+      if (container._vnode) {
+        unmount(container._vnode);
+      }
+    }
+    // 保存当前vnode到容器
+    container._vnode = vnode;
+  }
+  
+  // patch函数 - 处理DOM更新
+  function patch(oldVNode, newVNode, container) {
+    // DOM更新逻辑...
+  }
+  
+  // 返回渲染器
+  return {
+    render
+  };
+}
+
+// 创建浏览器渲染器
+const renderer = createRenderer({
+  createElement: (tag) => document.createElement(tag),
+  setElementText: (el, text) => el.textContent = text,
+  insert: (el, parent, anchor) => parent.insertBefore(el, anchor || null),
+  // ...其他API
+});
+      </pre>
+      <p class="result">👆 通过将平台API抽象为配置项，使渲染器与平台解耦</p>
+    `;
+
+      // ===== 实验3：组件化机制 =====
+      // 模拟Vue组件的本质和渲染流程
+
+      const componentDemo = document.getElementById("component-demo");
+      componentDemo.innerHTML = `
+      <h3>组件化机制</h3>
+      <pre>
+// 组件的本质：返回虚拟DOM树的函数或对象
+const MyComponent = {
+  // data函数返回响应式数据
+  data() {
+    return { count: 0 }
+  },
+  
+  // 模板编译成的渲染函数
+  render() {
+    return h('div', { class: 'my-component' }, [
+      h('p', null, \`Count: \${this.count}\`),
+      h('button', { onClick: () => this.count++ }, 'Increment')
+    ])
+  }
+};
+
+// 组件vnode
+const compVNode = h(MyComponent, { prop: 'value' });
+
+// 组件渲染流程
+// 1. 创建组件实例
+// 2. 设置组件状态
+// 3. 执行渲染函数，得到子树vnode
+// 4. 渲染子树vnode到DOM
+      </pre>
+      <p class="result">👆 组件本质是一组DOM元素的封装，渲染流程：template→render函数→虚拟DOM→真实DOM</p>
+      <div>
+        <h4>完整架构流程图：</h4>
+        <pre>
+用户界面(模板/JSX)
+     ↓
+编译器(Compiler) → 优化(静态提升、Block树)
+     ↓
+渲染函数(Render Function)
+     ↓
+响应式系统(Reactivity)
+     ↓
+虚拟DOM(Virtual DOM)
+     ↓
+渲染器(Renderer)
+     ↓
+真实DOM/其他平台
+        </pre>
+      </div>
+    `;
+
+      // 🤔 思考题输出
+      console.log(`
+    🤔 思考题：
+    1. Vue的架构设计与React相比有什么不同？
+    2. 为什么Vue的渲染器要设计成平台无关的？
+    3. 组件化为什么是现代前端框架的核心？
+    
+    请在学习笔记中记录您的答案...
+    `);
+    </script>
+  </body>
+</html>
